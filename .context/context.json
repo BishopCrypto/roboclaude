@@ -1,0 +1,62 @@
+{
+  "name": "roboclaude",
+  "description": "Robotron 2084 clone built with React and Canvas",
+  "type": "project",
+  "path": "/Users/ryan/Documents/roboclaude",
+  "tags": ["game", "react", "canvas", "javascript", "arcade"],
+  "metadata": {
+    "created": "2025-05-25",
+    "author": "Ryan Scott",
+    "status": "active",
+    "framework": "React",
+    "buildTool": "Vite",
+    "language": "JavaScript"
+  },
+  "key_files": [
+    {
+      "path": "README.md",
+      "description": "Project overview and instructions"
+    },
+    {
+      "path": "PRD.md",
+      "description": "Detailed product requirements document"
+    },
+    {
+      "path": "CLAUDE.md",
+      "description": "Claude Code development guidance"
+    },
+    {
+      "path": "package.json",
+      "description": "Node.js dependencies and scripts"
+    },
+    {
+      "path": "src/components/Game.jsx",
+      "description": "Main game component managing state and game loop"
+    },
+    {
+      "path": "src/components/GameRenderer.jsx",
+      "description": "Canvas rendering logic"
+    }
+  ],
+  "commands": {
+    "install": "npm install",
+    "dev": "npm run dev",
+    "build": "npm run build",
+    "preview": "npm run preview",
+    "lint": "npm run lint",
+    "debug": "npm run debug"
+  },
+  "context": {
+    "overview": "A modern web-based clone of Robotron 2084 featuring smooth player movement, auto-shooting mechanics, wave-based enemy progression, and classic arcade-style gameplay.",
+    "architecture": "React-based with HTML5 Canvas rendering, custom hooks for input handling, and modular component structure.",
+    "state_management": "Uses React hooks (useState, useRef) with centralized state in Game.jsx component.",
+    "key_features": [
+      "Dual-stick style controls (keyboard movement, mouse aiming)",
+      "Auto-shooting with 200ms fire rate",
+      "Wave-based difficulty progression",
+      "Collision detection system",
+      "Pause/unpause functionality",
+      "Pointer lock for immersive gameplay"
+    ]
+  }
+}

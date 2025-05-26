@@ -1,0 +1,90 @@
+# Roboclaude Context File
+# For use with context-portal MCP server
+
+[metadata]
+name = roboclaude
+type = project
+created = 2025-05-25
+author = Ryan Scott
+workspace = /Users/ryan/claude-setup
+
+[project]
+path = /Users/ryan/Documents/roboclaude
+description = Robotron 2084 clone built with React and Canvas - a modern web-based remake of the classic arcade game
+status = active
+repository = local
+
+[technology]
+language = JavaScript
+framework = React
+build_tool = Vite
+rendering = HTML5 Canvas
+package_manager = npm
+
+[structure]
+src/components = React components for game entities and UI
+src/hooks = Custom React hooks for game functionality
+src/utils = Utility functions for movement, collision, waves
+public = Static assets
+docs = README.md, PRD.md, CLAUDE.md
+
+[key_files]
+README.md = Project overview, features, controls, and development instructions
+PRD.md = Product Requirements Document with detailed specifications
+CLAUDE.md = Claude Code guidance for development and architecture
+package.json = Node.js dependencies and npm scripts
+src/components/Game.jsx = Main game component managing state and game loop
+src/components/GameRenderer.jsx = Canvas rendering logic separated from game logic
+src/hooks/useGameLoop.js = requestAnimationFrame-based game loop
+src/hooks/useKeyboard.js = Keyboard input handling for player movement
+src/hooks/usePointerLock.js = Mouse control with pointer lock API
+src/utils/movement.js = Vector-based movement calculations
+src/utils/collision.js = Circle-based collision detection
+src/utils/waves.js = Wave generation and enemy spawning
+
+[commands]
+install = npm install
+dev = npm run dev
+build = npm run build
+preview = npm run preview
+lint = npm run lint
+debug = npm run debug
+debug-enhanced = npm run debug-enhanced
+debug-esc = npm run debug-esc
+test-esc = ./test-esc-detection.sh
+
+[features]
+movement = WASD or arrow keys for player movement
+aiming = Mouse/trackpad for aiming direction
+shooting = Auto-shooting at 200ms intervals
+enemies = AI enemies that follow the player
+waves = Progressive difficulty with wave transitions
+collision = Bullet-enemy and player-enemy detection
+pause = ESC key to pause/unpause
+pointer_lock = Immersive mouse control
+score = Score tracking and display
+ui = Start screen, pause overlay, wave info
+
+[architecture_notes]
+- Separation of game logic (Game.jsx) and rendering (GameRenderer.jsx)
+- Custom hooks encapsulate related functionality
+- Centralized state management in Game component
+- Performance optimization with useRef for critical values
+- Clean component structure with single responsibility
+
+[development_notes]
+- Target 60 FPS performance
+- Support modern browsers (Chrome, Firefox, Safari, Edge)
+- Responsive to different screen sizes
+- Clear visual feedback for game events
+- Intuitive controls with immediate response
+
+[future_enhancements]
+- Power-ups and special weapons
+- Different enemy types with unique behaviors
+- Boss encounters at milestone waves
+- Sound effects and background music
+- Visual effects for explosions
+- High score tracking
+- Mobile support
+- Multiplayer functionality
