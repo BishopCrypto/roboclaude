@@ -16,11 +16,18 @@ A modern web-based clone of the classic arcade game Robotron 2084, built with Re
 
 - **WASD or Arrow Keys**: Move the player
 - **Mouse/Trackpad**: Aim your shots
+- **Q or Tab**: Switch weapons ⭐ NEW
+- **0-9**: Set ricochet count (bullets bounce between enemies)
+- **Space**: Lightning weapon (area damage with cooldown)
 - **ESC**: Pause/unpause the game
-- **ESC x2**: Close browser (when paused) ⭐ NEW
-- **Shift+ESC**: Manual close (debugging)
-- **Space**: Lightning weapon
 - **Click**: Start game or unpause
+
+## Weapons ⭐ NEW
+
+1. **Standard**: Basic yellow bullets
+2. **Homing Rockets**: Red rockets that seek enemies
+3. **Spread Shot**: Triple cyan bullets in a spread pattern
+4. **Laser**: Fast, powerful red beams
 
 ## Technologies Used
 

@@ -65,6 +65,19 @@ export const generateWaveEnemies = (wave, player, canvasWidth = 800, canvasHeigh
     }
   ];
   
+  // Add Spheroid enemies starting from wave 2
+  const spheroidType = {
+    type: 3, // Spheroid (floater/spawner)
+    color: '#10B981', // Green
+    size: 25, // Slightly smaller for better clustering visibility
+    speed: 0.8, // Slow drifting speed
+    health: 5,
+    points: 200,
+    isFloater: true, // Uses different movement pattern
+    canShoot: true, // Can fire at player
+    shootInterval: 3000 // Shoots every 3 seconds
+  };
+  
   // Create enemies for this wave
   for (let i = 0; i < baseEnemyCount; i++) {
     // Choose a random enemy type from available types
@@ -86,6 +99,54 @@ export const generateWaveEnemies = (wave, player, canvasWidth = 800, canvasHeigh
       points: enemyType.points,
       type: enemyType.type // Use the explicit type property!
     });
+  }
+  
+  // Add Spheroid clusters starting from wave 2
+  if (wave >= 2) {
+    const numClusters = Math.floor((wave - 1) / 3) + 1; // 1 cluster at wave 2, 2 at wave 5, etc.
+    const spheroidsPerCluster = 3 + Math.floor(wave / 4); // 3-5 spheroids per cluster
+    
+    for (let c = 0; c < numClusters; c++) {
+      // Generate cluster center position
+      const clusterCenter = generateRandomPosition(player, 250);
+      
+      // Create spheroids in this cluster
+      for (let s = 0; s < spheroidsPerCluster; s++) {
+        // Position spheroids in a circle around cluster center
+        const angle = (s / spheroidsPerCluster) * Math.PI * 2;
+        const radius = 30 + Math.random() * 15; // 30-45 pixels from center (tighter orbit)
+        
+        const spheroid = {
+          id: Date.now() + baseEnemyCount + c * 100 + s,
+          x: clusterCenter.x + Math.cos(angle) * radius,
+          y: clusterCenter.y + Math.sin(angle) * radius,
+          size: spheroidType.size,
+          speed: spheroidType.speed,
+          color: spheroidType.color,
+          health: spheroidType.health,
+          maxHealth: spheroidType.health,
+          points: spheroidType.points,
+          type: spheroidType.type,
+          isFloater: spheroidType.isFloater,
+          canShoot: spheroidType.canShoot,
+          shootInterval: spheroidType.shootInterval,
+          lastShotTime: 0,
+          // Cluster-specific properties
+          clusterId: c,
+          clusterCenterX: clusterCenter.x,
+          clusterCenterY: clusterCenter.y,
+          orbitAngle: angle,
+          orbitRadius: radius,
+          orbitSpeed: 0.02 + Math.random() * 0.01 // Slightly random orbit speeds
+        };
+        
+        // Ensure spheroid is within canvas bounds
+        spheroid.x = Math.max(spheroidType.size, Math.min(canvasWidth - spheroidType.size, spheroid.x));
+        spheroid.y = Math.max(spheroidType.size, Math.min(canvasHeight - spheroidType.size, spheroid.y));
+        
+        enemies.push(spheroid);
+      }
+    }
   }
   
   return enemies;

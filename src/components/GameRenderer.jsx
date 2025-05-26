@@ -47,6 +47,33 @@ const GameRenderer = ({
         // Tank: blue wide rectangle
         ctx.fillStyle = '#3B82F6';
         ctx.fillRect(enemy.x, enemy.y, enemy.size * 1.2, enemy.size * 0.7);
+      } else if (type === 3) {
+        // Turret: green octagon (stationary)
+        ctx.fillStyle = '#10B981';
+        ctx.beginPath();
+        const centerX = enemy.x + enemy.size / 2;
+        const centerY = enemy.y + enemy.size / 2;
+        const radius = enemy.size / 2;
+        
+        // Draw octagon
+        for (let i = 0; i < 8; i++) {
+          const angle = (i / 8) * Math.PI * 2;
+          const x = centerX + Math.cos(angle) * radius;
+          const y = centerY + Math.sin(angle) * radius;
+          if (i === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+        ctx.closePath();
+        ctx.fill();
+        
+        // Draw inner circle to make it look like a turret
+        ctx.fillStyle = '#059669';
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius * 0.4, 0, 2 * Math.PI);
+        ctx.fill();
       } else {
         // Fallback: red square
         ctx.fillStyle = '#EF4444';
@@ -140,10 +167,11 @@ const GameRenderer = ({
       } else if (bullet.type === 1) {
         // Line bullet
         ctx.strokeStyle = bullet.color;
-        ctx.lineWidth = 2;
+        ctx.lineWidth = bullet.size > 10 ? 4 : 2; // Thicker line for lasers
+        const length = bullet.length || bullet.size; // Use custom length if available
         ctx.beginPath();
         ctx.moveTo(bullet.x, bullet.y);
-        ctx.lineTo(bullet.x + bullet.dx * bullet.size, bullet.y + bullet.dy * bullet.size);
+        ctx.lineTo(bullet.x + bullet.dx * length, bullet.y + bullet.dy * length);
         ctx.stroke();
         
         // Draw reflection count indicator for ricochet bullets

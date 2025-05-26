@@ -74,7 +74,7 @@ const useKeyboard = (isPaused) => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [keys, isPaused]);
+  }, [isPaused]);
 
   return keys;
 };

@@ -6,11 +6,13 @@ import WaveInfo from './UI/WaveInfo';
 import ScoreDisplay from './UI/ScoreDisplay';
 import LightningCooldown from './UI/LightningCooldown';
 import ReflectionDisplay from './UI/ReflectionDisplay';
+import WeaponDisplay from './UI/WeaponDisplay';
 import useKeyboard from '../hooks/useKeyboard';
 import usePointerLock from '../hooks/usePointerLock';
 import useGameSounds from '../hooks/useGameSounds';
 import useLightningWeapon from '../hooks/useLightningWeapon';
 import useReflectionInput from '../hooks/useReflectionInput';
+import useWeaponSystem from '../hooks/useWeaponSystem';
 import { calculateLightningChain, applyLightningDamage } from '../utils/lightning';
 import GameLoop from '../systems/GameLoop';
 import WaveManager from '../managers/WaveManager';
@@ -32,22 +34,35 @@ const Game = () => {
     complete: false,
     transitioning: false,
     enemiesGenerated: false,
-    starting: true
+    starting: false
   });
   const [isPaused, setIsPaused] = useState(false);
   const [hasGameStarted, setHasGameStarted] = useState(false);
   const [transitionEndTime, setTransitionEndTime] = useState(null);
   
   // Custom hooks
-  const keys = useKeyboard();
+  const keys = useKeyboard(isPaused);
   const { isPointerLocked, requestPointerLock, exitPointerLock } = usePointerLock(canvasRef);
   const { playShoot, playEnemyHit, playWalk } = useGameSounds();
   const lightning = useLightningWeapon();
   const bulletReflections = useReflectionInput();
+  const { currentWeapon, weaponName, WEAPON_TYPES } = useWeaponSystem();
   
   // Track space key for lightning
   const spaceKeyPressed = useRef(false);
   const lastWalkSoundTimeRef = useRef(0);
+  const bulletReflectionsRef = useRef(bulletReflections);
+  const playShootRef = useRef(playShoot);
+  const playEnemyHitRef = useRef(playEnemyHit);
+  const currentWeaponRef = useRef(currentWeapon);
+  
+  // Update refs
+  useEffect(() => {
+    bulletReflectionsRef.current = bulletReflections;
+    playShootRef.current = playShoot;
+    playEnemyHitRef.current = playEnemyHit;
+    currentWeaponRef.current = currentWeapon;
+  }, [bulletReflections, playShoot, playEnemyHit, currentWeapon]);
   
   // Initialize game systems
   useEffect(() => {
@@ -60,37 +75,73 @@ const Game = () => {
     // Set up callbacks
     gameLoopRef.current.setCallbacks({
       onShoot: (player, mousePos) => {
-        playShoot();
+        playShootRef.current();
         
-        // Calculate bullet direction
+        const weapon = currentWeaponRef.current;
         const angle = Math.atan2(
           mousePos.y - (player.y + player.size / 2),
           mousePos.x - (player.x + player.size / 2)
         );
         
-        const speed = 10;
-        const dx = Math.cos(angle);
-        const dy = Math.sin(angle);
-        
-        return {
+        // Base bullet properties
+        const baseBullet = {
           x: player.x + player.size / 2 - 2.5,
           y: player.y + player.size / 2 - 2.5,
-          dx,
-          dy,
+          dx: Math.cos(angle),
+          dy: Math.sin(angle),
           size: 5,
-          speed,
+          speed: 10,
           damage: 1,
-          type: 0, // Regular bullet
-          color: '#FBBF24',
-          reflectionsRemaining: bulletReflections
+          reflectionsRemaining: bulletReflectionsRef.current
         };
+        
+        // Create bullets based on weapon type
+        switch (weapon) {
+          case 0: // Standard
+            return {
+              ...baseBullet,
+              type: 0,
+              color: '#FBBF24'
+            };
+            
+          case 1: // Homing
+            return {
+              ...baseBullet,
+              type: 0, // Rocket type for homing
+              color: '#FF6B6B',
+              speed: 8 // Slightly slower for homing
+            };
+            
+          case 2: // Spread (return array for multiple bullets)
+            const spreadAngle = 0.2; // radians
+            return [
+              { ...baseBullet, type: 1, color: '#4ECDC4', size: 8, dx: Math.cos(angle - spreadAngle), dy: Math.sin(angle - spreadAngle) },
+              { ...baseBullet, type: 1, color: '#4ECDC4', size: 8 },
+              { ...baseBullet, type: 1, color: '#4ECDC4', size: 8, dx: Math.cos(angle + spreadAngle), dy: Math.sin(angle + spreadAngle) }
+            ];
+            
+          case 3: // Laser
+            return {
+              ...baseBullet,
+              type: 1,
+              color: '#E94560',
+              speed: 20,
+              damage: 2,
+              size: 15,  // Thicker
+              length: 30 // Custom property for laser length
+            };
+            
+          default:
+            return baseBullet;
+        }
       },
       
       onEnemyHit: (result) => {
-        playEnemyHit();
+        playEnemyHitRef.current();
       },
       
       onStateUpdate: (state) => {
+        console.log('🎮 Game: State update received - enemies:', state.enemies.length, 'player:', state.player.x, state.player.y);
         setPlayer(state.player);
         setEnemies(state.enemies);
         setBullets(state.bullets);
@@ -137,7 +188,7 @@ const Game = () => {
         gameLoopRef.current.destroy();
       }
     };
-  }, [playShoot, playEnemyHit, bulletReflections]);
+  }, []); // Remove dependencies to ensure game systems are only created once
   
   // Handle game start
   const handleStart = () => {
@@ -155,10 +206,13 @@ const Game = () => {
   // Update game loop with current state
   useEffect(() => {
     if (gameLoopRef.current) {
+      console.log('🎮 Game: Updating game loop - keys:', keys, 'isPaused:', isPaused);
       gameLoopRef.current.setPlayerInput(keys);
       gameLoopRef.current.setMousePosition(mousePosRef.current);
       gameLoopRef.current.setPointerLocked(isPointerLocked);
       gameLoopRef.current.setPaused(isPaused);
+    } else {
+      console.log('🔴 Game: GameLoop not initialized yet');
     }
   }, [keys, isPointerLocked, isPaused]);
   
@@ -181,19 +235,21 @@ const Game = () => {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, [isPointerLocked]);
   
-  // Handle ESC key for pause
+  // Handle ESC key for pause - simplified
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && hasGameStarted && !isPaused) {
-        setIsPaused(true);
-        exitPointerLock();
+      if (e.key === 'Escape' && hasGameStarted) {
+        if (!isPaused) {
+          setIsPaused(true);
+          // Don't call exitPointerLock here - let the browser handle it
+        }
         e.preventDefault();
       }
     };
     
-    window.addEventListener('keydown', handleKeyDown, true);
-    return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [isPaused, hasGameStarted, exitPointerLock]);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isPaused, hasGameStarted]);
   
   // Handle lightning weapon
   useEffect(() => {
@@ -201,16 +257,22 @@ const Game = () => {
       spaceKeyPressed.current = true;
       
       const lightningChain = calculateLightningChain(player, enemies);
+      console.log('⚡ Lightning activated - chain length:', lightningChain.length);
+      
       if (lightningChain.length > 0) {
         const hitResults = applyLightningDamage(lightningChain);
         lightning.activate(lightningChain);
         
         // Process lightning damage through game loop
         if (gameLoopRef.current) {
-          gameLoopRef.current.processLightning(lightningChain);
+          console.log('⚡ Processing lightning damage for', lightningChain.length, 'enemies');
+          const results = gameLoopRef.current.processLightning(lightningChain);
+          console.log('⚡ Lightning damage results:', results);
         }
         
         playEnemyHit();
+      } else {
+        console.log('⚡ No enemies in lightning range');
       }
     }
     
@@ -221,13 +283,18 @@ const Game = () => {
   
   // Initialize first wave
   useEffect(() => {
+    console.log('🎮 Game: Wave init check - hasGameStarted:', hasGameStarted, 'isPaused:', isPaused, 'isPointerLocked:', isPointerLocked, 'enemiesGenerated:', waveState.enemiesGenerated);
+    
     if (hasGameStarted && !isPaused && isPointerLocked && !waveState.enemiesGenerated) {
       const waveManager = waveManagerRef.current;
       const gameLoop = gameLoopRef.current;
       
+      console.log('🎮 Game: Initializing first wave');
+      
       if (waveManager && gameLoop) {
         const newEnemies = waveManager.generateEnemies(player);
         if (newEnemies) {
+          console.log('🎮 Game: Generated', newEnemies.length, 'enemies');
           gameLoop.init({
             player,
             enemies: newEnemies,
@@ -340,6 +407,7 @@ const Game = () => {
       <ScoreDisplay score={score} />
       <LightningCooldown lightning={lightning} />
       <ReflectionDisplay reflections={bulletReflections} />
+      <WeaponDisplay weaponName={weaponName} />
     </div>
   );
 };

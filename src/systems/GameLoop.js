@@ -40,6 +40,7 @@ class GameLoop {
   start() {
     if (this.isRunning) return;
     
+    console.log('🟢 GameLoop: Starting game loop');
     this.isRunning = true;
     this.intervalId = setInterval(() => this.update(), 16); // ~60 FPS
   }
@@ -66,8 +67,18 @@ class GameLoop {
    * Main update function
    */
   update() {
-    if (this.isPaused) return;
+    if (this.isPaused) {
+      console.log('🔴 GameLoop: Update skipped - game is paused');
+      return;
+    }
 
+    // Log every 60 frames (once per second) to avoid spam
+    if (!this.frameCount) this.frameCount = 0;
+    this.frameCount++;
+    if (this.frameCount % 60 === 0) {
+      console.log('🟢 GameLoop: Update tick - playerInput:', this.playerInput, 'mousePos:', this.mousePos, 'isPointerLocked:', this.isPointerLocked);
+    }
+    
     const currentState = this.gameStateManager.getState();
     
     // Update player position
@@ -78,7 +89,7 @@ class GameLoop {
 
     // Update enemy positions
     this.gameStateManager.updateEnemyPositions((enemy, player) => 
-      calculateEnemyMovement(enemy, player)
+      calculateEnemyMovement(enemy, player, 50, 800, 600)
     );
 
     // Update bullet positions
@@ -107,6 +118,28 @@ class GameLoop {
     // Handle auto-shooting
     this.handleAutoShooting();
 
+    // Handle enemy shooting
+    this.handleEnemyShooting();
+
+    // Check enemy bullet-player collisions
+    const enemyBulletCollisions = this.collisionSystem.checkEnemyBulletPlayerCollisions(
+      this.gameStateManager.bullets, 
+      this.gameStateManager.player
+    );
+    
+    if (enemyBulletCollisions.length > 0) {
+      // Process enemy bullet hits on player
+      enemyBulletCollisions.forEach(collision => {
+        // Remove the bullet
+        this.gameStateManager.removeBullet(collision.bulletIndex);
+        
+        // Damage the player
+        if (this.onPlayerHit) {
+          this.onPlayerHit(collision.damage);
+        }
+      });
+    }
+
     // Check for wave completion
     if (this.gameStateManager.enemies.length === 0 && this.onWaveComplete) {
       this.onWaveComplete(this.gameStateManager.wave);
@@ -128,12 +161,62 @@ class GameLoop {
       
       if (this.onShoot) {
         const player = this.gameStateManager.player;
-        const bullet = this.onShoot(player, this.mousePos);
-        if (bullet) {
-          this.gameStateManager.addBullet(bullet);
+        const bulletOrBullets = this.onShoot(player, this.mousePos);
+        if (bulletOrBullets) {
+          // Handle both single bullet and array of bullets
+          const bullets = Array.isArray(bulletOrBullets) ? bulletOrBullets : [bulletOrBullets];
+          bullets.forEach(bullet => this.gameStateManager.addBullet(bullet));
         }
       }
     }
+  }
+
+  /**
+   * Handle enemy shooting
+   */
+  handleEnemyShooting() {
+    const now = Date.now();
+    const player = this.gameStateManager.player;
+    const enemies = this.gameStateManager.enemies;
+    
+    enemies.forEach(enemy => {
+      if (enemy.canShoot && enemy.shootInterval) {
+        // Initialize last shot time if not set
+        if (!enemy.lastShotTime) {
+          enemy.lastShotTime = now;
+        }
+        
+        // Check if it's time to shoot
+        if (now - enemy.lastShotTime >= enemy.shootInterval) {
+          enemy.lastShotTime = now;
+          
+          // Calculate direction to player
+          const dx = player.x + player.size / 2 - (enemy.x + enemy.size / 2);
+          const dy = player.y + player.size / 2 - (enemy.y + enemy.size / 2);
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          if (distance > 0) {
+            // Create enemy bullet
+            const normalizedDx = dx / distance;
+            const normalizedDy = dy / distance;
+            
+            const bullet = {
+              x: enemy.x + enemy.size / 2,
+              y: enemy.y + enemy.size / 2,
+              dx: normalizedDx,
+              dy: normalizedDy,
+              speed: 3,
+              size: 6,
+              damage: 1,
+              isEnemyBullet: true,
+              color: '#FF6B6B' // Red color for enemy bullets
+            };
+            
+            this.gameStateManager.addBullet(bullet);
+          }
+        }
+      }
+    });
   }
 
   /**

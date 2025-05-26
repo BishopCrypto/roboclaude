@@ -62,6 +62,11 @@ class WaveManager {
     if (!this.waveState.complete) {
       this.waveState.complete = true;
       
+      // Clear cluster drifts for next wave
+      if (window.clusterDrifts) {
+        window.clusterDrifts = {};
+      }
+      
       if (this.onWaveComplete) {
         this.onWaveComplete(this.currentWave);
       }

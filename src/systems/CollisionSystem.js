@@ -18,6 +18,9 @@ class CollisionSystem {
     this.collisionResults = [];
     
     bullets.forEach((bullet, bulletIndex) => {
+      // Skip enemy bullets - they don't hit other enemies
+      if (bullet.isEnemyBullet) return;
+      
       const collisionResult = checkBulletEnemyCollisionWithRicochet(bullet, enemies);
       const { hitIndex, shouldRemoveBullet, updatedBullet } = collisionResult;
       
@@ -78,6 +81,28 @@ class CollisionSystem {
           enemyIndex,
           enemy,
           damage: link.damage || 1
+        });
+      }
+    });
+    
+    return hitResults;
+  }
+
+  /**
+   * Check enemy bullet collisions with player
+   */
+  checkEnemyBulletPlayerCollisions(bullets, player, isInvincible = false) {
+    if (isInvincible) return [];
+    
+    const hitResults = [];
+    
+    bullets.forEach((bullet, bulletIndex) => {
+      if (bullet.isEnemyBullet && checkCollision(bullet, player)) {
+        hitResults.push({
+          type: 'enemy-bullet-player',
+          bulletIndex,
+          bullet,
+          damage: bullet.damage || 1
         });
       }
     });

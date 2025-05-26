@@ -60,7 +60,8 @@ class GameStateManager {
 
   // Handle collision between a bullet and enemies
   handleBulletEnemyCollision(bulletIndex, enemyIndex, damage = 1) {
-    if (bulletIndex < 0 || bulletIndex >= this.bullets.length) return false;
+    // Lightning damage has bulletIndex of -1
+    if (bulletIndex !== -1 && (bulletIndex < 0 || bulletIndex >= this.bullets.length)) return false;
     if (enemyIndex < 0 || enemyIndex >= this.enemies.length) return false;
 
     const enemy = this.enemies[enemyIndex];
@@ -108,7 +109,8 @@ class GameStateManager {
       
       // Handle enemy damage
       if (enemyIndex >= 0) {
-        const damageResult = this.handleBulletEnemyCollision(bulletIndex, enemyIndex);
+        const damage = result.damage || 1;
+        const damageResult = this.handleBulletEnemyCollision(bulletIndex, enemyIndex, damage);
         processedResults.push({ ...result, ...damageResult });
       }
       
